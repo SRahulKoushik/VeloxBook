@@ -143,7 +143,7 @@ Clone bcrypt and googletest libraries manually if you have any issues.
 
 ## Caution
 
-Create .env files with the required environment variables in the frontend and root directories.
+Create .env files with the required environment variables in the frontend and root directories. \n
 Add your SSL Certificates to the certs folder.
 
 ---
