@@ -136,14 +136,14 @@ See the backend source (`src/OrderBookController.h/cpp`) for full endpoint detai
 - **picojson** — JSON parsing ([external/picojson/](external/picojson/))
 - **googletest** — C++ unit testing ([external/googletest/README.md](external/googletest/README.md))
 
-See each library's directory for license and documentation details.
+See each library's directory for license and documentation details.  
 Clone bcrypt and googletest libraries manually if you have any issues.
 
 ---
 
 ## Caution
 
-Create .env files with the required environment variables in the frontend and root directories. \n
+Create .env files with the required environment variables in the frontend and root directories.  
 Add your SSL Certificates to the certs folder.
 
 ---
