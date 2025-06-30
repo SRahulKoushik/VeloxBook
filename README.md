@@ -1,4 +1,4 @@
-# ORDER-BOOK
+# VeloxBook
 
 A full-stack, professional-grade order book trading platform featuring a high-performance C++ backend and a modern React frontend. Designed for real-time trading, robust order management, and extensibility.
 
