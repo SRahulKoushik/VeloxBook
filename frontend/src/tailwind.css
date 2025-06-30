@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Enable dark mode for the whole app using the 'dark' class on <html> */ 
