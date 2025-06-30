@@ -13,6 +13,7 @@ A full-stack, professional-grade order book trading platform featuring a high-pe
 - [Setup & Installation](#setup--installation)
 - [API Overview](#api-overview)
 - [Third-Party Dependencies](#third-party-dependencies)
+- [Caution](#caution)
 - [License](#license)
 - [More Information](#more-information)
 
@@ -137,6 +138,13 @@ See the backend source (`src/OrderBookController.h/cpp`) for full endpoint detai
 
 See each library's directory for license and documentation details.
 Clone bcrypt and googletest libraries manually if you have any issues.
+
+---
+
+## Caution
+
+Create .env files with the required environment variables in the frontend and root directories.
+Add your SSL Certificates to the certs folder.
 
 ---
 
