@@ -124,6 +124,22 @@ npm run dev
 
 ---
 
+## Backend Asynchronous & Concurrency Features
+
+The backend demonstrates modern C++ and Drogon asynchronous/concurrent programming:
+
+- **std::async, std::future:** Launch background tasks and retrieve results asynchronously.
+- **std::thread:** Run custom background threads for offloading work.
+- **std::mutex, std::lock_guard:** Ensure thread safety for shared data.
+- **std::condition_variable:** Signal and coordinate between threads.
+- **Drogon async handlers:** Use callback-based async HTTP endpoints for non-blocking request processing.
+- **Asynchronous database access:** Drogon ORM supports fully async SQL queries.
+- **Thread pool:** Drogon runs handlers in a thread pool for high concurrency.
+
+See the `/async_demo` endpoint for a live demonstration of these features.
+
+---
+
 ## API Overview
 
 See the backend source (`src/OrderBookController.h/cpp`) for full endpoint details and request/response formats.
@@ -163,16 +179,4 @@ Third-party libraries retain their original licenses (see [LICENSE](LICENSE)).
 - Test instructions: `tests/`
 - For questions or contributions, open an issue or pull request.
 
-## Backend Asynchronous & Concurrency Features
 
-The backend demonstrates modern C++ and Drogon asynchronous/concurrent programming:
-
-- **std::async, std::future:** Launch background tasks and retrieve results asynchronously.
-- **std::thread:** Run custom background threads for offloading work.
-- **std::mutex, std::lock_guard:** Ensure thread safety for shared data.
-- **std::condition_variable:** Signal and coordinate between threads.
-- **Drogon async handlers:** Use callback-based async HTTP endpoints for non-blocking request processing.
-- **Asynchronous database access:** Drogon ORM supports fully async SQL queries.
-- **Thread pool:** Drogon runs handlers in a thread pool for high concurrency.
-
-See the `/async_demo` endpoint for a live demonstration of these features.
