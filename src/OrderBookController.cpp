@@ -10,6 +10,11 @@
 #include <drogon/utils/Utilities.h>
 #include "utils.hpp"
 #include "jwt-cpp/jwt.h"
+#include <future>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
 
 MatchingEngine* OrderBookController::engine = nullptr;
 std::atomic<size_t>* OrderBookController::g_order_count = nullptr;
@@ -17,6 +22,12 @@ std::atomic<size_t>* OrderBookController::g_trade_count = nullptr;
 std::atomic<double>* OrderBookController::g_last_order_latency_ms = nullptr;
 OrderBookWebSocket* OrderBookController::wsController = nullptr;
 drogon::orm::DbClientPtr OrderBookController::dbClient = nullptr;
+
+// Demo variables for concurrency
+std::mutex demo_mutex;
+std::condition_variable demo_cv;
+bool demo_ready = false;
+int demo_shared_value = 0;
 
 void OrderBookController::setEngine(MatchingEngine* eng) {
     engine = eng;
@@ -597,4 +608,66 @@ void OrderBookController::loginUser(const drogon::HttpRequestPtr& req, std::func
         },
         username
     );
+}
+
+void OrderBookController::asyncDemo(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) {
+    // 1. Launch a background task with std::async
+    auto future = std::async(std::launch::async, []() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        return 42;
+    });
+
+    // 2. Launch a thread and use condition_variable for signaling
+    std::thread t([]() {
+        std::unique_lock<std::mutex> lock(demo_mutex);
+        demo_shared_value = 99;
+        demo_ready = true;
+        demo_cv.notify_one();
+    });
+    t.detach();
+
+    // 3. Wait for the signal
+    {
+        std::unique_lock<std::mutex> lock(demo_mutex);
+        demo_cv.wait(lock, []{ return demo_ready; });
+        demo_ready = false;
+    }
+
+    // 4. Use std::lock_guard for thread safety
+    int safe_value;
+    {
+        std::lock_guard<std::mutex> lock(demo_mutex);
+        safe_value = demo_shared_value;
+    }
+
+    // 5. Async DB access (if dbClient is set)
+    if (dbClient) {
+        dbClient->execSqlAsync(
+            "SELECT 1",
+            [callback, safe_value, future = std::move(future)](const drogon::orm::Result &result) mutable {
+                Json::Value res;
+                res["std_async_result"] = future.get();
+                res["thread_safe_value"] = safe_value;
+                res["db_result"] = result.empty() ? 0 : result[0][0].as<int>();
+                auto resp = HttpResponse::newHttpJsonResponse(res);
+                add_cors_headers(resp);
+                callback(resp);
+            },
+            [callback](const std::exception_ptr &e) {
+                Json::Value res;
+                res["error"] = "DB error";
+                auto resp = HttpResponse::newHttpJsonResponse(res);
+                add_cors_headers(resp);
+                callback(resp);
+            }
+        );
+        return;
+    }
+    // If no DB, just return the async/thread results
+    Json::Value res;
+    res["std_async_result"] = future.get();
+    res["thread_safe_value"] = safe_value;
+    auto resp = HttpResponse::newHttpJsonResponse(res);
+    add_cors_headers(resp);
+    callback(resp);
 }

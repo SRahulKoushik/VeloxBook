@@ -27,6 +27,7 @@ public:
     ADD_METHOD_TO(OrderBookController::getTradeHistory, "/trades/{1}", Get, Options);
     ADD_METHOD_TO(OrderBookController::registerUser, "/register", Post, Options);
     ADD_METHOD_TO(OrderBookController::loginUser, "/login", Post, Options);
+    ADD_METHOD_TO(OrderBookController::asyncDemo, "/async_demo", Get, Options);
     METHOD_LIST_END
 
     void placeOrder(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
@@ -41,6 +42,7 @@ public:
     void getTradeHistory(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string userId);
     void registerUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void loginUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
+    void asyncDemo(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
 
     static void setEngine(MatchingEngine* eng);
     static void setWebSocketController(OrderBookWebSocket* ws);

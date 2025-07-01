@@ -145,7 +145,7 @@ int main() {
     });
 
     // Enable CORS for frontend integration (always for dev, safe for prod if needed)
-    drogon::app().enableCors();
+    // drogon::app().enableCors();
 
     // Serve frontend static files in production (uncomment and set correct path)
     // drogon::app().setDocumentRoot("../../frontend/dist");
