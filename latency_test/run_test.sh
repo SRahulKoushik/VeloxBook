@@ -9,7 +9,7 @@ echo "- Testing continuous updates (not just single orders)"
 echo "- Excluding WebSocket setup overhead"
 echo "- Measuring efficiency over time"
 echo
-echo "Make sure your VeloxBook backend is running on localhost:18080"
+echo "Make sure the VeloxBook backend is running on localhost:18080"
 echo
 
 # Check if Python is available

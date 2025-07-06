@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/auth.jsx';
 import { DarkModeContext } from '../services/darkmode.jsx';
 
+// Dark mode toggle button component
+// Simple sun/moon icons that switch the theme
 function DarkModeToggle() {
   const { dark, toggleDark } = useContext(DarkModeContext);
   return (
@@ -20,11 +22,15 @@ function DarkModeToggle() {
   );
 }
 
+// Main header component - navigation and user controls
+// I've made it responsive so it works well on mobile and desktop
+// Shows different options based on whether user is logged in
 export default function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
+  // Handle user logout
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -35,14 +41,14 @@ export default function Header() {
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* App logo/brand */}
           <div className="flex-shrink-0">
             <Link to="/" className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-              Order Book
+              VeloxBook
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop navigation menu */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link 
               to="/" 
@@ -84,7 +90,7 @@ export default function Header() {
             <DarkModeToggle />
           </nav>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button and dark mode toggle */}
           <div className="md:hidden flex items-center space-x-2">
             <DarkModeToggle />
             <button
@@ -102,7 +108,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile navigation menu - slides down when hamburger is clicked */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700">
             <div className="px-2 pt-2 pb-3 space-y-1">

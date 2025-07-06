@@ -6,50 +6,61 @@
 #include <chrono>
 #include <memory>
 
-// Enum for order type
+// Different types of orders you can place
 enum class OrderType 
 {
-    MARKET,
-    LIMIT,
-    STOP,
-    STOP_LIMIT
+    MARKET,      // Execute immediately at best available price
+    LIMIT,       // Only execute at specified price or better
+    STOP,        // Market order that triggers at a specific price
+    STOP_LIMIT   // Limit order that triggers at a specific price
 };
 
-// Enum for order side
+// Whether you're buying or selling
 enum class OrderSide 
 {
-    BUY,
-    SELL
+    BUY,         // You want to buy (you're a bidder)
+    SELL         // You want to sell (you're an asker)
 };
 
-// Enum for order status
+// Current status of an order
 enum class OrderStatus 
 {
-    NEW,
-    PARTIAL,
-    FILLED,
-    CANCELLED,
-    REJECTED
+    NEW,         // Just placed, waiting to be processed
+    PARTIAL,     // Partially filled, some quantity remaining
+    FILLED,      // Completely filled
+    CANCELLED,   // Cancelled by user or system
+    REJECTED     // Rejected due to invalid parameters
 };
 
-// Order class
+// Represents a trading order
+// 
+// This is the core data structure that represents a user's intent to trade.
+// When you place an order, it gets stored as one of these objects and
+// processed by the matching engine.
 struct Order 
 {
-    orderbook::OrderId id;
-    std::string symbol;
-    OrderSide side;
-    OrderType type;
-    orderbook::Price price;         // For LIMIT/STOP_LIMIT orders
-    orderbook::Price stop_price;    // For STOP/STOP_LIMIT orders
-    orderbook::Quantity quantity;
-    orderbook::Quantity filled_quantity = 0;
-    OrderStatus status = OrderStatus::NEW;
-    orderbook::UserId user_id;
-    std::chrono::high_resolution_clock::time_point timestamp;
-    // --- New fields for expiry and TIF ---
-    int64_t expiry = 0; // Unix timestamp in seconds, 0 = no expiry (GTC)
-    std::string tif = "GTC"; // Time-in-force: GTC, IOC, FOK, etc.
+    orderbook::OrderId id;          // Unique identifier for this order
+    std::string symbol;             // What you're trading (e.g., "BTC-USD")
+    OrderSide side;                 // Buy or sell
+    OrderType type;                 // Market, limit, stop, etc.
+    orderbook::Price price;         // Your limit price (0 for market orders)
+    orderbook::Price stop_price;    // Trigger price for stop orders
+    orderbook::Quantity quantity;   // How much you want to trade
+    orderbook::Quantity filled_quantity = 0;  // How much has been filled so far
+    OrderStatus status = OrderStatus::NEW;    // Current status
+    orderbook::UserId user_id;      // Who placed this order
+    std::chrono::high_resolution_clock::time_point timestamp;  // When it was placed
+    
+    // Time-in-Force and expiry settings
+    int64_t expiry = 0;             // When this order expires (Unix timestamp, 0 = never)
+    std::string tif = "GTC";        // Time-in-Force: GTC (Good Till Cancelled), IOC (Immediate or Cancel), FOK (Fill or Kill)
 
+    // Constructor - creates a new order
+    // 
+    // Most parameters are self-explanatory. A few notes:
+    // - stop_price is only used for STOP and STOP_LIMIT orders
+    // - expiry of 0 means the order never expires (GTC)
+    // - tif defaults to "GTC" (Good Till Cancelled)
     Order(orderbook::OrderId id_,
           const std::string& symbol_,
           OrderSide side_,
@@ -74,15 +85,18 @@ struct Order
     {}
 };
 
-// Trade struct
+// Represents a completed trade
+// 
+// When two orders match (a buy meets a sell), a trade is created.
+// This records who traded with whom, at what price, and how much.
 struct Trade 
 {
-    orderbook::OrderId buy_order_id;
-    orderbook::OrderId sell_order_id;
-    std::string symbol;
-    orderbook::Price price;
-    orderbook::Quantity quantity;
-    std::chrono::high_resolution_clock::duration timestamp;
+    orderbook::OrderId buy_order_id;   // ID of the buy order
+    orderbook::OrderId sell_order_id;  // ID of the sell order
+    std::string symbol;                // What was traded
+    orderbook::Price price;            // Price the trade happened at
+    orderbook::Quantity quantity;      // How much was traded
+    std::chrono::high_resolution_clock::duration timestamp;  // When the trade happened
 };
 
 #endif // ORDERBOOK_ORDER_HPP

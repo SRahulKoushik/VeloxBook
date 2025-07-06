@@ -2,6 +2,8 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { getOrderBook } from '../services/api';
 
+// Loading skeleton for when data is being fetched
+// Shows animated placeholders so the UI doesn't jump around
 function SkeletonRow() {
   return (
     <tr>
@@ -11,12 +13,16 @@ function SkeletonRow() {
   );
 }
 
+// The main order book component - shows live bid and ask prices
+// This is probably the most important part of any trading interface
+// I've made it responsive so it works well on mobile and desktop
 export default function OrderBook({ orderBook = { bids: [], asks: [] } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     // Load initial data for fast UI, but will be replaced by WebSocket updates
+    // This gives users something to look at immediately
     getOrderBook('BTCUSD')
       .then(() => {
         setLoading(false);
@@ -25,7 +31,9 @@ export default function OrderBook({ orderBook = { bids: [], asks: [] } }) {
         setError(err.message);
         setLoading(false);
       });
+    
     // Listen for custom 'order-placed' event to refresh order book
+    // This ensures the order book updates when users place orders
     function handleOrderPlaced() {
       setLoading(true);
       getOrderBook('BTCUSD')
@@ -43,12 +51,14 @@ export default function OrderBook({ orderBook = { bids: [], asks: [] } }) {
     };
   }, []);
 
+  // Show error message if something goes wrong
   if (error) return (
     <div className="bg-white rounded-lg shadow p-4">
       <div className="text-red-600 text-center">Error: {error}</div>
     </div>
   );
 
+  // Show loading skeleton while fetching data
   if (loading) return (
     <div className="bg-white rounded-lg shadow p-4">
       <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Order Book</h2>
@@ -95,7 +105,7 @@ export default function OrderBook({ orderBook = { bids: [], asks: [] } }) {
     <div className="bg-white rounded-lg shadow p-4">
       <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Order Book</h2>
       
-      {/* Mobile Layout - Stacked */}
+      {/* Mobile Layout - Stacked vertically to save space */}
       <div className="block lg:hidden space-y-4">
         <div>
           <h3 className="text-green-600 font-bold text-sm mb-2">Bids</h3>
@@ -142,7 +152,7 @@ export default function OrderBook({ orderBook = { bids: [], asks: [] } }) {
         </div>
       </div>
 
-      {/* Desktop Layout - Side by Side */}
+      {/* Desktop Layout - Side by side for better comparison */}
       <div className="hidden lg:grid lg:grid-cols-2 gap-6">
         <div>
           <h3 className="text-green-600 font-bold text-base mb-3">Bids</h3>

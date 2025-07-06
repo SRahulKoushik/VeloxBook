@@ -4,6 +4,9 @@ import { placeOrder } from '../services/api';
 import { useAuth } from '../services/auth.jsx';
 import toast from 'react-hot-toast';
 
+// Order placement form - this is where users actually trade
+// I've made it simple but functional with proper validation
+// The form changes color based on buy/sell to make it intuitive
 export default function OrderForm() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -16,10 +19,13 @@ export default function OrderForm() {
     user_id: user?.username || 'user1'
   });
 
+  // Update form state when user types
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
+  // Handle order submission
+  // This is where the magic happens - sends order to the backend
   async function handleSubmit(e) {
     e.preventDefault();
     if (!user) {
@@ -39,6 +45,7 @@ export default function OrderForm() {
         quantity: parseInt(form.quantity, 10)
       });
       toast.success('Order placed successfully!');
+      // Trigger order book refresh so users see their order immediately
       window.dispatchEvent(new Event('order-placed'));
       setForm({
         ...form,
@@ -52,6 +59,7 @@ export default function OrderForm() {
     }
   }
 
+  // Show login prompt if user isn't authenticated
   if (!user) return (
     <div className="bg-white rounded-lg shadow p-4 sm:p-6">
       <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Place Order</h2>
@@ -66,7 +74,7 @@ export default function OrderForm() {
       <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Place Order</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Symbol */}
+        {/* Trading symbol - what you're buying/selling */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Symbol
@@ -81,7 +89,7 @@ export default function OrderForm() {
           />
         </div>
 
-        {/* Side and Type */}
+        {/* Buy/sell side and order type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -114,7 +122,7 @@ export default function OrderForm() {
           </div>
         </div>
 
-        {/* Price and Quantity */}
+        {/* Price and quantity inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -151,7 +159,7 @@ export default function OrderForm() {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit button - changes color based on buy/sell */}
         <button
           type="submit"
           disabled={loading}

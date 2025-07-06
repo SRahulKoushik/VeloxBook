@@ -10,10 +10,15 @@ using namespace drogon;
 using namespace orderbook;
 
 class OrderBookWebSocket;
+
+// Main API controller for the trading platform
+// Handles all the HTTP endpoints that the frontend calls
 class OrderBookController : public drogon::HttpController<OrderBookController> {
 public:
     static constexpr bool isAutoCreation = false;
     
+    // Define all the API endpoints
+    // The frontend calls these URLs to interact with the trading system
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(OrderBookController::placeOrder, "/order", Post, Options);
     ADD_METHOD_TO(OrderBookController::cancelOrder, "/cancel/{1}", Delete, Options);
@@ -22,7 +27,7 @@ public:
     ADD_METHOD_TO(OrderBookController::getOrderBook, "/orderbook/{1}", Get, Options);
     ADD_METHOD_TO(OrderBookController::health, "/health", Get, Options);
     ADD_METHOD_TO(OrderBookController::metrics, "/metrics", Get, Options);
-    // New endpoints
+    // User management and additional features
     ADD_METHOD_TO(OrderBookController::getOrderById, "/order/{1}", Get, Options);
     ADD_METHOD_TO(OrderBookController::getTradeHistory, "/trades/{1}", Get, Options);
     ADD_METHOD_TO(OrderBookController::registerUser, "/register", Post, Options);
@@ -30,6 +35,7 @@ public:
     ADD_METHOD_TO(OrderBookController::asyncDemo, "/async_demo", Get, Options);
     METHOD_LIST_END
 
+    // Core trading endpoints
     void placeOrder(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
     void cancelOrder(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string orderId);
     void modifyOrder(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
@@ -37,18 +43,20 @@ public:
     void getOrderBook(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string symbol);
     void health(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
     void metrics(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
-    // New endpoints
+    // User management and additional features
     void getOrderById(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string orderId);
     void getTradeHistory(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string userId);
     void registerUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void loginUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void asyncDemo(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
 
+    // Setup methods - called during initialization
     static void setEngine(MatchingEngine* eng);
     static void setWebSocketController(OrderBookWebSocket* ws);
     static void setMetrics(std::atomic<size_t>* oc, std::atomic<size_t>* tc, std::atomic<double>* lat);
     static void setDbClient(drogon::orm::DbClientPtr dbClient_);
 private:
+    // Shared components that all controller instances can access
     static MatchingEngine* engine;
     static OrderBookWebSocket* wsController;
     static std::atomic<size_t>* g_order_count;

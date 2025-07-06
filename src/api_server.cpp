@@ -1,4 +1,5 @@
-// Drogon HTTP/WebSocket API server for OrderBook
+// Main server file for the VeloxBook trading platform
+// This is where everything comes together - HTTP server, WebSocket, database, matching engine
 #include <drogon/drogon.h>
 #include <json/json.h>
 #include "matching_engine.hpp"
@@ -21,34 +22,39 @@
 
 using namespace orderbook;
 
-// Production API key - use environment variable
+// Get API key from environment variable for security
+// In production, always use environment variables, never hardcode secrets
 const std::string get_api_key() {
     const char* env_key = std::getenv("ORDERBOOK_API_KEY");
     if (env_key) {
         return std::string(env_key);
     }
-    return "my-secret-key"; // Fallback for development
+    return "my-secret-key"; // Fallback for development only
 }
 
-// Production log file path
+// Get log file path from environment variable
+// This lets you configure logging without rebuilding
 const std::string get_log_file() {
     const char* env_log = std::getenv("ORDERBOOK_LOG_FILE");
     if (env_log) {
         return std::string(env_log);
     }
-    return "orderbook.log"; // Fallback for development
+    return "orderbook.log"; // Default log file
 }
 
-// Global for metrics
+// Global metrics that track system performance
+// These get updated in real-time as orders and trades happen
 std::atomic<size_t> g_order_count{0};
 std::atomic<size_t> g_trade_count{0};
 std::atomic<double> g_last_order_latency_ms{0.0};
 
-// Rate limiting map
+// Rate limiting to prevent abuse
+// Tracks when each IP address last made a request
 std::unordered_map<std::string, std::chrono::steady_clock::time_point> rate_limit_map;
 std::mutex rate_limit_mutex;
 
-// Simple string sanitizer
+// Clean user input to prevent injection attacks
+// Only allows safe characters (alphanumeric, underscore, hyphen)
 std::string sanitize(const std::string& s) {
     std::string out;
     for (char c : s) {
@@ -57,7 +63,8 @@ std::string sanitize(const std::string& s) {
     return out;
 }
 
-// Rate limiting filter
+// Rate limiting filter to prevent API abuse
+// Limits each IP to 10 requests per second
 class RateLimitFilter : public drogon::HttpFilter<RateLimitFilter> {
 public:
     void doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallback &&fcb, drogon::FilterChainCallback &&fccb) override {
@@ -84,7 +91,8 @@ public:
     }
 };
 
-// Append JSON to log file
+// Write JSON entries to the log file
+// Useful for debugging and audit trails
 void append_log(const Json::Value& entry) {
     std::ofstream ofs(get_log_file(), std::ios::app);
     Json::StreamWriterBuilder wbuilder;
@@ -94,7 +102,8 @@ void append_log(const Json::Value& entry) {
     ofs << std::endl;
 }
 
-// JWT Auth Filter
+// JWT authentication filter
+// Validates JWT tokens in the Authorization header
 class JwtAuthFilter : public drogon::HttpFilter<JwtAuthFilter> {
 public:
     void doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallback &&fcb, drogon::FilterChainCallback &&fccb) override {
@@ -134,7 +143,8 @@ int main() {
     std::cout << "== ORDERBOOK SERVER STARTING ==" << std::endl;
     std::cout << "Drogon version: " << drogon::getVersion() << std::endl;
 
-    // Set up signal handlers for graceful shutdown
+    // Set up graceful shutdown handlers
+    // This ensures the server shuts down cleanly when you press Ctrl+C
     signal(SIGINT, [](int) {
         std::cout << "\n[SERVER] Shutting down..." << std::endl;
         drogon::app().quit();
@@ -151,7 +161,8 @@ int main() {
     // drogon::app().setDocumentRoot("../../frontend/dist");
     // If your frontend build output is in a different folder, adjust the path above.
 
-    // Hardcoded DB client
+    // Connect to PostgreSQL database
+    // The connection pool size of 5 is good for most workloads
     using namespace drogon::orm;
     auto dbClient = DbClient::newPgClient("host=127.0.0.1 port=5432 dbname=orderbookdb user=rahulorderbook password=SRK2905boss?!", 5);
     if (!dbClient) {
@@ -162,23 +173,24 @@ int main() {
         return 1;
     }
 
-    // Create required tables synchronously to ensure they exist before querying
+    // Create the database tables if they don't exist
+    // This ensures the database is ready to store orders and trades
     try {
         std::cout << "[DB] Creating database tables..." << std::endl;
         
-        // Create orders table
+        // Create orders table - stores all order information
         dbClient->execSqlSync(
             "CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, symbol TEXT, side TEXT, type TEXT, price BIGINT, quantity BIGINT, user_id TEXT, status TEXT);"
         );
         std::cout << "[DB] Orders table ready" << std::endl;
         
-        // Create actions table
+        // Create actions table - audit trail of all order actions
         dbClient->execSqlSync(
             "CREATE TABLE IF NOT EXISTS actions (action TEXT, order_id TEXT, price BIGINT, quantity BIGINT, ts TIMESTAMPTZ DEFAULT NOW());"
         );
         std::cout << "[DB] Actions table ready" << std::endl;
         
-        // Create trades table
+        // Create trades table - stores executed trades
         dbClient->execSqlSync(
             "CREATE TABLE IF NOT EXISTS trades (symbol TEXT, buy_order_id TEXT, sell_order_id TEXT, price BIGINT, quantity BIGINT, ts TIMESTAMPTZ DEFAULT NOW());"
         );
@@ -190,9 +202,11 @@ int main() {
         return 1;
     }
 
+    // Create the matching engine - this is the heart of the trading system
     MatchingEngine engine;
 
-    // --- Replay DB state ---
+    // Replay any existing orders from the database
+    // This ensures the matching engine state matches what's stored
     try {
         std::cout << "[DB] Replaying database state..." << std::endl;
         

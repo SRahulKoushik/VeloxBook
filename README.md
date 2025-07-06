@@ -1,106 +1,116 @@
 # VeloxBook
 
-A full-stack, professional-grade order book trading platform featuring a high-performance C++ backend and a modern React frontend. Designed for real-time trading, robust order management, and extensibility.
+Hey there! I built this trading platform because I wanted something that could handle real-time order book data without the usual latency issues. It's a full-stack system with a C++ backend that's fast as lightning and a React frontend that actually looks good.
+
+I've put a lot of work into making sure the WebSocket connections are rock solid and the order matching engine can handle serious volume.
 
 ---
 
-## Table of Contents
+## What's Inside
 
 - [Features](#features)
-- [Architecture Overview](#architecture-overview)
-- [Backend (C++/Drogon)](#backend-cdrogon)
-- [Frontend (React/Vite)](#frontend-reactvite)
-- [Setup & Installation](#setup--installation)
-- [API Overview](#api-overview)
-- [Third-Party Dependencies](#third-party-dependencies)
-- [Caution](#caution)
+- [How It Works](#how-it-works)
+- [Backend Details](#backend-details)
+- [Frontend Details](#frontend-details)
+- [Getting Started](#getting-started)
+- [API Reference](#api-reference)
+- [Dependencies](#dependencies)
+- [Important Notes](#important-notes)
 - [License](#license)
-- [More Information](#more-information)
+- [Support](#support)
 
 ---
 
 ## Features
 
-- **Real-time Order Book:** Live updates via WebSocket for instant market depth and trade visibility.
-- **Secure Trading:** JWT-based authentication, rate limiting, and secure order placement.
-- **Comprehensive Order Types:** Supports market, limit, stop, and stop-limit orders, with TIF (Time-in-Force) options (GTC, IOC, FOK).
-- **Trade History:** Persistent trade and order history, with user-specific queries.
-- **Metrics & Analytics:** Real-time metrics (spread, order/trade ratio, cancellation rate) and health endpoints.
-- **Responsive UI:** Modern, mobile-friendly interface with live order book, trade history, and order management.
-- **Extensible:** Modular backend and frontend, easy to add new features or markets.
+Here's what makes this platform special:
+
+- **Real-time Order Book:** WebSocket updates that actually work - no more refreshing pages to see the latest prices
+- **Secure Trading:** JWT auth, rate limiting, and proper order validation so you don't accidentally blow up your account
+- **All Order Types:** Market, limit, stop, stop-limit orders with proper TIF (Time-in-Force) handling
+- **Trade History:** Everything gets logged and you can query your own trades
+- **Live Metrics:** Spread, order/trade ratios, cancellation rates - all the stuff you need to know
+- **Responsive UI:** Works on desktop, tablet, phone - wherever you want to trade
+- **Extensible:** Easy to add new features or markets when you need them
 
 ---
 
-## Architecture Overview
+## How It Works
 
-  A[React Frontend] --REST/WebSocket--> B[Drogon C++ API Server]
-  B --DB access--> C[(PostgreSQL)]
-  B --Password Hashing--> D[bcrypt]
-  B --JWT Auth--> E[jwt-cpp]
-  B --JSON--> F[picojson]
+```
+React Frontend ←→ C++ Backend ←→ PostgreSQL
+     ↓              ↓              ↓
+  WebSocket     Matching Engine   Data Storage
+  REST API      Order Processing  Trade History
+```
 
-- **Frontend:** React (Vite, Tailwind CSS) SPA, communicates with backend via REST and WebSocket.
-- **Backend:** Drogon C++ server, custom matching engine, PostgreSQL for persistence, JWT for auth, bcrypt for password security.
+The frontend talks to the backend via REST API and WebSocket. The backend handles all the heavy lifting with a custom matching engine, and everything gets stored in PostgreSQL so you don't lose your data.
 
 ---
 
-## Backend (C++/Drogon)
+## Backend Details
 
-- **Matching Engine:** High-performance, thread-safe order book supporting multiple symbols, price levels, and order types.
-- **API Server:** Built with Drogon, exposes REST endpoints for order management, user auth, and metrics.
-- **WebSocket:** Real-time order book and trade updates.
-- **Persistence:** PostgreSQL for orders, actions, and trade history.
-- **Security:** JWT authentication, bcrypt password hashing, CORS, and rate limiting.
+I built the backend in C++ using Drogon because I needed something that could handle thousands of orders per second without breaking a sweat. Here's what's under the hood:
 
-### Key Backend Endpoints
+- **Matching Engine:** Thread-safe order book that can handle multiple symbols and order types
+- **API Server:** REST endpoints for everything you need - orders, trades, user management
+- **WebSocket:** Real-time updates that actually work (no polling nonsense)
+- **Database:** PostgreSQL for persistence - your orders and trades are safe
+- **Security:** JWT tokens, bcrypt password hashing, proper CORS setup
 
-- `POST /order` — Place a new order (market, limit, stop, stop-limit)
+### API Endpoints
+
+Here are the main endpoints you'll use:
+
+- `POST /order` — Place orders (market, limit, stop, stop-limit)
 - `DELETE /cancel/{order_id}` — Cancel an order
-- `POST /modify` — Modify an existing order
-- `GET /orders/{user_id}` — List user's orders (with filters)
-- `GET /orderbook/{symbol}` — Get current order book for a symbol
-- `GET /order/{order_id}` — Get order details
-- `GET /trades/{user_id}` — Get user's trade history
-- `POST /register` — Register a new user
-- `POST /login` — Authenticate and receive JWT
-- `GET /health` — Health check
-- `GET /metrics` — Real-time metrics
-- `GET /async_demo` — Demonstrates backend async/concurrency features (std::async, std::thread, mutex, condition_variable, async DB, etc.)
+- `POST /modify` — Modify existing orders
+- `GET /orders/{user_id}` — Get your order history
+- `GET /orderbook/{symbol}` — Get current order book
+- `GET /order/{order_id}` — Get specific order details
+- `GET /trades/{user_id}` — Get your trade history
+- `POST /register` — Create account
+- `POST /login` — Get JWT token
+- `GET /health` — Check if server is alive
+- `GET /metrics` — Get performance metrics
+- `GET /async_demo` — See the async/concurrency features in action
 
 ### WebSocket
 
-- `/ws/orderbook` — Subscribe for real-time order book and trade updates
+- `/ws/orderbook` — Subscribe to real-time order book and trade updates
 
 ---
 
-## Frontend (React/Vite)
+## Frontend Details
 
-- **Live Order Book:** Real-time updates with WebSocket, responsive tables for bids/asks.
-- **Order Placement:** Secure, user-friendly form for market/limit orders.
-- **Trade History:** User-specific trade history, sortable and filterable.
-- **Authentication:** JWT-based login/register, protected routes.
-- **UI/UX:** Built with Tailwind CSS, responsive, dark mode ready.
-- **Notifications:** Toasts for order status, errors, and system messages.
+The frontend is built with React and Vite - fast development and fast runtime. I used Tailwind CSS because I'm not a designer and it makes everything look decent.
 
-### Main Components
+- **Live Order Book:** Real-time updates, responsive tables, all the good stuff
+- **Order Placement:** Clean forms with proper validation
+- **Trade History:** Sortable, filterable, shows exactly what you need
+- **Authentication:** JWT-based login/register with protected routes
+- **UI/UX:** Responsive design, dark mode support
+- **Notifications:** Toast messages for order status and errors
 
-- `OrderBook` — Displays live bids/asks, updates in real time
+### Components
+
+- `OrderBook` — Shows live bids/asks with real-time updates
 - `OrderForm` — Place buy/sell orders with validation
-- `TradeHistory` — Shows user's executed trades
+- `TradeHistory` — Your executed trades
 - `MyOrders` — Manage open and historical orders
-- `TickerTape` — (Optional) Market ticker/summary
+- `TickerTape` — Market summary (optional)
 - `Header` — Navigation and user controls
 
 ---
 
-## Setup & Installation
+## Getting Started
 
-### Prerequisites
+### What You Need
 
 - C++17 compiler, Ninja, CMake, Drogon, PostgreSQL
 - Node.js (v16+), npm
 
-### Backend
+### Backend Setup
 
 ```sh
 # From project root
@@ -109,18 +119,77 @@ cd build
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="path-to-drogon-installation"
 ninja
 cd src
-# Run the server (ensure PostgreSQL is running and configured)
+# Start the server (make sure PostgreSQL is running)
 .\api_server.exe
 ```
 
-### Frontend
+### Frontend Setup
 
 ```sh
 cd frontend
 npm install
-cp .env.example .env # Edit API/WS URLs if needed
+cp .env.example .env # Update API/WS URLs if needed
 npm run dev
 ```
+
+---
+
+## Async & Concurrency Features
+
+I've implemented proper async/concurrent programming in the backend because trading platforms need to handle multiple requests simultaneously. Here's what I used:
+
+- **std::async, std::future:** Background tasks that don't block the main thread
+- **std::thread:** Custom threads for heavy work
+- **std::mutex, std::lock_guard:** Thread safety for shared data
+- **std::condition_variable:** Thread coordination
+- **Drogon async handlers:** Non-blocking HTTP endpoints
+- **Async database access:** SQL queries that don't freeze the server
+- **Thread pool:** Drogon handles concurrent requests efficiently
+
+Check out the `/async_demo` endpoint to see this stuff in action.
+
+---
+
+## API Reference
+
+The full API details are in the backend source files (`src/OrderBookController.h/cpp`). That's where you'll find the exact request/response formats.
+
+---
+
+## Dependencies
+
+I've included these third-party libraries:
+
+- **bcrypt** — Password hashing (see [external/bcrypt/README](external/bcrypt/README))
+- **jwt-cpp** — JWT handling (see [external/jwt-cpp/](external/jwt-cpp/))
+- **picojson** — JSON parsing (see [external/picojson/](external/picojson/))
+- **googletest** — C++ unit testing (see [external/googletest/README.md](external/googletest/README.md))
+
+Each library has its own license and documentation. If you have issues with bcrypt or googletest, you might need to clone them manually.
+
+---
+
+## Important Notes
+
+- Create .env files with your environment variables in the frontend and root directories
+- Put your SSL certificates in the certs folder
+- The WebSocket latency test shows some pretty impressive results - check out `latency_test/README.md`
+
+---
+
+## License
+
+This project uses the MIT License. The third-party libraries keep their original licenses (see [LICENSE](LICENSE)).
+
+---
+
+## Support
+
+- Frontend details: [frontend/README.md](frontend/README.md)
+- Backend config: `src/config.json`
+- Tests: `tests/`
+- WebSocket performance test: `latency_test/README.md`
+- Questions or contributions? Open an issue or pull request.
 
 ---
 
@@ -137,47 +206,5 @@ The backend demonstrates modern C++ and Drogon asynchronous/concurrent programmi
 - **Thread pool:** Drogon runs handlers in a thread pool for high concurrency.
 
 See the `/async_demo` endpoint for a live demonstration of these features.
-
----
-
-## API Overview
-
-See the backend source (`src/OrderBookController.h/cpp`) for full endpoint details and request/response formats.
-
----
-
-## Third-Party Dependencies
-
-- **bcrypt** — Password hashing ([external/bcrypt/README](external/bcrypt/README))
-- **jwt-cpp** — JWT handling ([external/jwt-cpp/](external/jwt-cpp/))
-- **picojson** — JSON parsing ([external/picojson/](external/picojson/))
-- **googletest** — C++ unit testing ([external/googletest/README.md](external/googletest/README.md))
-
-See each library's directory for license and documentation details.  
-Clone bcrypt and googletest libraries manually if you have any issues.
-
----
-
-## Caution
-
-Create .env files with the required environment variables in the frontend and root directories.  
-Add your SSL Certificates to the certs folder.
-
----
-
-## License
-
-This project is licensed under the MIT License.  
-Third-party libraries retain their original licenses (see [LICENSE](LICENSE)).
-
----
-
-## More Information
-
-- Frontend details: [frontend/README.md](frontend/README.md)
-- Backend configuration: `src/config.json`
-- Test instructions: `tests/`
-- - WebSocket latency test: `latency_test/README.md` (demonstrates 50ms latency reduction)
-- For questions or contributions, open an issue or pull request.
 
 

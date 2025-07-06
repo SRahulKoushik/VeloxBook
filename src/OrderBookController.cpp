@@ -16,6 +16,8 @@
 #include <condition_variable>
 #include <queue>
 
+// Global pointers to the core system components
+// I keep these static so all controller instances can access the same engine
 MatchingEngine* OrderBookController::engine = nullptr;
 std::atomic<size_t>* OrderBookController::g_order_count = nullptr;
 std::atomic<size_t>* OrderBookController::g_trade_count = nullptr;
@@ -23,7 +25,8 @@ std::atomic<double>* OrderBookController::g_last_order_latency_ms = nullptr;
 OrderBookWebSocket* OrderBookController::wsController = nullptr;
 drogon::orm::DbClientPtr OrderBookController::dbClient = nullptr;
 
-// Demo variables for concurrency
+// Demo variables for the async/concurrency demo endpoint
+// These show how to use std::mutex, std::condition_variable, etc.
 std::mutex demo_mutex;
 std::condition_variable demo_cv;
 bool demo_ready = false;
@@ -40,14 +43,16 @@ void OrderBookController::setDbClient(drogon::orm::DbClientPtr dbClient_) {
     dbClient = dbClient_;
 }
 
-// Helper: sanitize string
+// Clean up user input to prevent injection attacks
+// Only allows alphanumeric chars, underscores, and hyphens
 static std::string sanitize(const std::string& s) {
     std::string out;
     for (char c : s) if (isalnum(c) || c == '_' || c == '-') out += c;
     return out;
 }
 
-// Helper: validate order JSON
+// Validate that the order JSON has all required fields
+// Returns false and sets error message if validation fails
 static bool validate_order_json(const Json::Value& body, std::string& err) {
     if (!body.isMember("symbol") || !body["symbol"].isString()) { err = "Missing or invalid 'symbol'"; return false; }
     if (!body.isMember("side") || !body["side"].isString()) { err = "Missing or invalid 'side'"; return false; }
@@ -60,7 +65,8 @@ static bool validate_order_json(const Json::Value& body, std::string& err) {
     return true;
 }
 
-// Helper to add CORS headers to all responses
+// Add CORS headers so the frontend can talk to the backend
+// Without this, browsers block cross-origin requests
 void add_cors_headers(const drogon::HttpResponsePtr& resp) {
     resp->addHeader("Access-Control-Allow-Origin", "*");
     resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -118,14 +124,14 @@ void OrderBookController::placeOrder(const HttpRequestPtr& req, std::function<vo
             tif
         );
         auto trades = engine->add_order(order);
-        // TIF handling
+        // Handle Time-in-Force orders (IOC = Immediate or Cancel, FOK = Fill or Kill)
         if (tif == "IOC" && order->filled_quantity < order->quantity) engine->cancel_order(order->id);
         if (tif == "FOK" && order->filled_quantity < order->quantity) engine->cancel_order(order->id);
         if (g_order_count) (*g_order_count)++;
         if (g_trade_count) (*g_trade_count) += trades.size();
         auto t1 = std::chrono::high_resolution_clock::now();
         if (g_last_order_latency_ms) *g_last_order_latency_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-        // Insert order/action into PostgreSQL
+        // Save the order to the database asynchronously
         if (dbClient) {
             dbClient->execSqlAsync(
                 "INSERT INTO orders (id, symbol, side, type, price, quantity, user_id, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO UPDATE SET symbol=EXCLUDED.symbol, side=EXCLUDED.side, type=EXCLUDED.type, price=EXCLUDED.price, quantity=EXCLUDED.quantity, user_id=EXCLUDED.user_id, status=EXCLUDED.status;",
@@ -143,7 +149,7 @@ void OrderBookController::placeOrder(const HttpRequestPtr& req, std::function<vo
                 std::string("add"), std::string(order->id), order->price, order->quantity
             );
         }
-        // --- WebSocket broadcast ---
+        // Send real-time updates via WebSocket
         if (wsController) {
             wsController->broadcastOrderBook(symbol);
             for (const auto& trade : trades) {
@@ -159,7 +165,7 @@ void OrderBookController::placeOrder(const HttpRequestPtr& req, std::function<vo
                 wsController->broadcastTrade(symbol, payload);
             }
         }
-        // ---
+        // Build the response with order status and any trades that happened
         Json::Value resj;
         resj["status"] = order->status == OrderStatus::FILLED ? "filled" :
                           order->status == OrderStatus::PARTIAL ? "partial" :
@@ -191,7 +197,7 @@ void OrderBookController::placeOrder(const HttpRequestPtr& req, std::function<vo
 void OrderBookController::cancelOrder(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string orderId) {
     orderId = sanitize(orderId);
     bool success = engine->cancel_order(orderId);
-    // Insert cancel action into PostgreSQL
+    // Log the cancellation in the database
     if (dbClient && success) {
         dbClient->execSqlAsync(
             "INSERT INTO actions (action, order_id) VALUES ($1,$2);",

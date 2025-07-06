@@ -1,6 +1,7 @@
 {
-  "name": "order-book-frontend",
+  "name": "veloxbook-frontend",
   "version": "1.0.0",
+  "description": "React frontend for the VeloxBook trading platform - real-time order book with WebSocket updates",
   "private": true,
   "scripts": {
     "dev": "vite",

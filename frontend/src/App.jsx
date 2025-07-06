@@ -10,6 +10,9 @@ import Home from './pages/Home';
 import { AuthProvider, useAuth } from './services/auth.jsx';
 import { DarkModeProvider } from './services/darkmode.jsx';
 
+// Protected route component - checks if user is logged in
+// If not logged in, redirects to login page
+// Shows a loading spinner while checking auth status
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   
@@ -27,12 +30,16 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" />;
 }
 
+// Main app component - this is where everything comes together
+// I've structured it with providers at the top level so all components
+// can access auth state and dark mode settings
 export default function App() {
   return (
     <DarkModeProvider>
       <Router>
         <AuthProvider>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+            {/* Toast notifications for user feedback */}
             <Toaster 
               position="top-right"
               toastOptions={{
@@ -46,6 +53,7 @@ export default function App() {
             <Header />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
               <TickerTape />
+              {/* App routing - different pages for different features */}
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
