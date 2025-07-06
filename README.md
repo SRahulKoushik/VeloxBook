@@ -177,6 +177,7 @@ Third-party libraries retain their original licenses (see [LICENSE](LICENSE)).
 - Frontend details: [frontend/README.md](frontend/README.md)
 - Backend configuration: `src/config.json`
 - Test instructions: `tests/`
+- - WebSocket latency test: `latency_test/README.md` (demonstrates 50ms latency reduction)
 - For questions or contributions, open an issue or pull request.
 
 
