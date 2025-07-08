@@ -215,6 +215,21 @@ void OrderBookController::cancelOrder(const HttpRequestPtr& req, std::function<v
         callback(resp);
         return;
     }
+    
+    // Broadcast order book updates after successful cancellation
+    if (wsController) {
+        // Get all symbols that might have been affected
+        auto all_orders = engine->get_all_orders();
+        std::set<std::string> affected_symbols;
+        for (const auto& order : all_orders) {
+            affected_symbols.insert(order->symbol);
+        }
+        // Broadcast updates for all symbols (or implement symbol lookup for cancelled order)
+        for (const auto& symbol : affected_symbols) {
+            wsController->broadcastOrderBook(symbol);
+        }
+    }
+    
     Json::Value resJson;
     resJson["result"] = "Cancelled";
     auto resp = HttpResponse::newHttpJsonResponse(resJson);
@@ -266,9 +281,16 @@ void OrderBookController::modifyOrder(const HttpRequestPtr& req, std::function<v
         }
         // --- WebSocket broadcast ---
         if (success && wsController) {
-            // Find symbol for this order (not available here unless engine provides lookup)
-            // For now, broadcast all books (or extend engine to provide symbol lookup)
-            // wsController->broadcastOrderBook(symbol);
+            // Get all symbols that might have been affected
+            auto all_orders = engine->get_all_orders();
+            std::set<std::string> affected_symbols;
+            for (const auto& order : all_orders) {
+                affected_symbols.insert(order->symbol);
+            }
+            // Broadcast updates for all symbols (or implement symbol lookup for modified order)
+            for (const auto& symbol : affected_symbols) {
+                wsController->broadcastOrderBook(symbol);
+            }
         }
         if (!success) {
             auto resp = HttpResponse::newHttpJsonResponse(Json::Value({{"error", "Order not found or not modifiable"}}));
@@ -337,6 +359,9 @@ void OrderBookController::getTradeHistory(const HttpRequestPtr& req, std::functi
         t["sell_order_id"] = trade.sell_order_id;
         t["price"] = trade.price;
         t["quantity"] = trade.quantity;
+        // Convert time_point to timestamp (milliseconds since epoch)
+        auto timestamp_ms = std::chrono::duration_cast<std::chrono::milliseconds>(trade.timestamp.time_since_epoch()).count();
+        t["timestamp"] = timestamp_ms;
         resj.append(t);
     }
     auto resp = HttpResponse::newHttpJsonResponse(resj);
@@ -676,4 +701,67 @@ void OrderBookController::asyncDemo(const HttpRequestPtr& req, std::function<voi
     auto resp = HttpResponse::newHttpJsonResponse(res);
     add_cors_headers(resp);
     callback(resp);
+}
+
+// CORS preflight handlers - these respond to OPTIONS requests
+void OrderBookController::handleOptions(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) {
+    auto resp = HttpResponse::newHttpResponse();
+    resp->addHeader("Access-Control-Allow-Origin", "*");
+    resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    resp->addHeader("Access-Control-Allow-Credentials", "true");
+    resp->setStatusCode(k200OK);
+    callback(resp);
+}
+
+void OrderBookController::handleOptionsWithParam(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string param) {
+    auto resp = HttpResponse::newHttpResponse();
+    resp->addHeader("Access-Control-Allow-Origin", "*");
+    resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    resp->addHeader("Access-Control-Allow-Credentials", "true");
+    resp->setStatusCode(k200OK);
+    callback(resp);
+}
+
+void OrderBookController::clearAllOrders(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) {
+    try {
+        // Clear all orders from the matching engine
+        engine->clear();
+        
+        // Clear orders from database
+        if (dbClient) {
+            dbClient->execSqlAsync(
+                "DELETE FROM orders;",
+                [](const drogon::orm::Result& result) { /* Success */ },
+                [](const std::exception_ptr& e) { /* Error */ }
+            );
+            dbClient->execSqlAsync(
+                "DELETE FROM actions;",
+                [](const drogon::orm::Result& result) { /* Success */ },
+                [](const std::exception_ptr& e) { /* Error */ }
+            );
+        }
+        
+        // Broadcast empty order book to all WebSocket clients
+        if (wsController) {
+            wsController->broadcastOrderBook("BTCUSD");
+        }
+        
+        Json::Value resj;
+        resj["message"] = "All orders cleared successfully";
+        resj["cleared"] = true;
+        
+        auto resp = HttpResponse::newHttpJsonResponse(resj);
+        add_cors_headers(resp);
+        callback(resp);
+        
+    } catch (const std::exception& e) {
+        Json::Value errJson;
+        errJson["error"] = "Failed to clear orders";
+        auto resp = HttpResponse::newHttpJsonResponse(errJson);
+        resp->setStatusCode(k500InternalServerError);
+        add_cors_headers(resp);
+        callback(resp);
+    }
 }

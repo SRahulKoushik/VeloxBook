@@ -17,8 +17,7 @@
       "name": "CorsFilter",
       "type": "global",
       "config": {
-        "allow_all": false,
-        "allow_origins": ["https://your-frontend-domain.com"]
+        "allow_all": true
       }
     }
   ]

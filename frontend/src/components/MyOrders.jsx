@@ -21,6 +21,7 @@ export default function MyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const userId = user?.username;
 
@@ -31,7 +32,7 @@ export default function MyOrders() {
       return;
     }
     setLoading(true);
-    getMyOrders(userId)
+    getMyOrders(userId, showHistory)
       .then(data => {
         setOrders(data.orders || data || []);
         setLoading(false);
@@ -53,7 +54,7 @@ export default function MyOrders() {
       window.removeEventListener('order-placed', handleOrderPlaced);
     };
     // eslint-disable-next-line
-  }, [userId]);
+  }, [userId, showHistory]);
 
   async function handleCancel(id) {
     try {
@@ -116,7 +117,18 @@ export default function MyOrders() {
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">My Orders</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800">My Orders</h2>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">Show History:</label>
+          <input
+            type="checkbox"
+            checked={showHistory}
+            onChange={(e) => setShowHistory(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+        </div>
+      </div>
       
       {orders.length === 0 ? (
         <div className="text-center text-gray-500 py-8">

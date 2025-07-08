@@ -82,6 +82,7 @@ target_link_libraries(api_server PRIVATE
     OpenSSL::SSL
     OpenSSL::Crypto
     bcrypt
+    pq
 )
 
 # Include directories for the server

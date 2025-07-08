@@ -96,7 +96,7 @@ struct Trade
     std::string symbol;                // What was traded
     orderbook::Price price;            // Price the trade happened at
     orderbook::Quantity quantity;      // How much was traded
-    std::chrono::high_resolution_clock::duration timestamp;  // When the trade happened
+    std::chrono::high_resolution_clock::time_point timestamp;  // When the trade happened
 };
 
 #endif // ORDERBOOK_ORDER_HPP

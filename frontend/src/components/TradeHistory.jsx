@@ -73,7 +73,8 @@ export default function TradeHistory({ trades = [] }) {
 
   const formatTime = (timestamp) => {
     if (!timestamp) return '-';
-    const date = new Date(timestamp);
+    // Handle both milliseconds and seconds timestamps
+    const date = new Date(typeof timestamp === 'number' && timestamp < 1e12 ? timestamp * 1000 : timestamp);
     return date.toLocaleTimeString();
   };
 
@@ -91,6 +92,7 @@ export default function TradeHistory({ trades = [] }) {
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-2 px-2">Time</th>
+                <th className="text-left py-2 px-2">Symbol</th>
                 <th className="text-right py-2 px-2">Price</th>
                 <th className="text-right py-2 px-2">Qty</th>
               </tr>
@@ -100,6 +102,9 @@ export default function TradeHistory({ trades = [] }) {
                 <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-2 px-2 text-gray-600">
                     {formatTime(trade.timestamp || trade.time)}
+                  </td>
+                  <td className="py-2 px-2 font-medium">
+                    {trade.symbol}
                   </td>
                   <td className="py-2 px-2 text-right font-mono">
                     ${trade.price?.toFixed(2) || trade.price}

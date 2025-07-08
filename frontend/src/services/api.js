@@ -58,9 +58,10 @@ export async function getTradeHistory(userId) {
 
 // Get all open orders for a user
 // Shows orders that haven't been filled or cancelled yet
-export async function getMyOrders(userId) {
+export async function getMyOrders(userId, showHistory = false) {
   try {
-    const response = await api.get(`/orders/${encodeURIComponent(userId)}`);
+    const params = showHistory ? { history: 'true' } : {};
+    const response = await api.get(`/orders/${encodeURIComponent(userId)}`, { params });
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to fetch orders');

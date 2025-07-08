@@ -196,6 +196,12 @@ int main() {
         );
         std::cout << "[DB] Trades table ready" << std::endl;
         
+        // Create users table - stores user authentication data
+        dbClient->execSqlSync(
+            "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW());"
+        );
+        std::cout << "[DB] Users table ready" << std::endl;
+        
         std::cout << "[DB] All tables created successfully" << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "[DB ERROR] Failed to create tables: " << e.what() << std::endl;
@@ -297,6 +303,7 @@ int main() {
     // Start server
     drogon::app().addListener("0.0.0.0", 18080);
     std::cout << "[SERVER] Drogon running at http://localhost:18080\n";
+
     drogon::app().run();
     return 0;
 }

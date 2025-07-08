@@ -3,6 +3,8 @@
 
 class CorsFilter : public drogon::HttpFilter<CorsFilter> {
 public:
+    static constexpr bool isAutoCreation = true;
+    
     void doFilter(const drogon::HttpRequestPtr &req,
                   drogon::FilterCallback &&fcb,
                   drogon::FilterChainCallback &&fccb) override {

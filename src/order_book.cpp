@@ -95,7 +95,7 @@ std::vector<Trade> OrderBook::match_orders(std::shared_ptr<Order> order) {
                 trade.sell_order_id = counter_order->id;
                 trade.price = price;
                 trade.quantity = trade_qty;
-                trade.timestamp = std::chrono::high_resolution_clock::now().time_since_epoch();
+                trade.timestamp = std::chrono::high_resolution_clock::now();
                 trade.symbol = symbol_;
                 trades.push_back(trade);
 
@@ -154,7 +154,7 @@ std::vector<Trade> OrderBook::match_orders(std::shared_ptr<Order> order) {
                 trade.sell_order_id = order->id;
                 trade.price = price;
                 trade.quantity = trade_qty;
-                trade.timestamp = std::chrono::high_resolution_clock::now().time_since_epoch();
+                trade.timestamp = std::chrono::high_resolution_clock::now();
                 trade.symbol = symbol_;
                 trades.push_back(trade);
 

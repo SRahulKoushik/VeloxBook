@@ -20,19 +20,35 @@ public:
     // Define all the API endpoints
     // The frontend calls these URLs to interact with the trading system
     METHOD_LIST_BEGIN
-    ADD_METHOD_TO(OrderBookController::placeOrder, "/order", Post, Options);
-    ADD_METHOD_TO(OrderBookController::cancelOrder, "/cancel/{1}", Delete, Options);
-    ADD_METHOD_TO(OrderBookController::modifyOrder, "/modify", Post, Options);
-    ADD_METHOD_TO(OrderBookController::getOrders, "/orders/{1}", Get, Options);
-    ADD_METHOD_TO(OrderBookController::getOrderBook, "/orderbook/{1}", Get, Options);
-    ADD_METHOD_TO(OrderBookController::health, "/health", Get, Options);
-    ADD_METHOD_TO(OrderBookController::metrics, "/metrics", Get, Options);
+    ADD_METHOD_TO(OrderBookController::placeOrder, "/api/order", Post, Options);
+    ADD_METHOD_TO(OrderBookController::cancelOrder, "/api/cancel/{1}", Delete, Options);
+    ADD_METHOD_TO(OrderBookController::modifyOrder, "/api/modify", Post, Options);
+    ADD_METHOD_TO(OrderBookController::getOrders, "/api/orders/{1}", Get, Options);
+    ADD_METHOD_TO(OrderBookController::getOrderBook, "/api/orderbook/{1}", Get, Options);
+    ADD_METHOD_TO(OrderBookController::health, "/api/health", Get, Options);
+    ADD_METHOD_TO(OrderBookController::metrics, "/api/metrics", Get, Options);
     // User management and additional features
-    ADD_METHOD_TO(OrderBookController::getOrderById, "/order/{1}", Get, Options);
-    ADD_METHOD_TO(OrderBookController::getTradeHistory, "/trades/{1}", Get, Options);
-    ADD_METHOD_TO(OrderBookController::registerUser, "/register", Post, Options);
-    ADD_METHOD_TO(OrderBookController::loginUser, "/login", Post, Options);
-    ADD_METHOD_TO(OrderBookController::asyncDemo, "/async_demo", Get, Options);
+    ADD_METHOD_TO(OrderBookController::getOrderById, "/api/order/{1}", Get, Options);
+    ADD_METHOD_TO(OrderBookController::getTradeHistory, "/api/trades/{1}", Get, Options);
+    ADD_METHOD_TO(OrderBookController::registerUser, "/api/register", Post, Options);
+    ADD_METHOD_TO(OrderBookController::loginUser, "/api/login", Post, Options);
+    ADD_METHOD_TO(OrderBookController::asyncDemo, "/api/async_demo", Get, Options);
+    ADD_METHOD_TO(OrderBookController::clearAllOrders, "/api/clear-orders", Delete, Options);
+    
+    // Explicit OPTIONS handlers for CORS
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/order", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/modify", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/health", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/metrics", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/register", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/login", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/async_demo", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptions, "/api/clear-orders", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptionsWithParam, "/api/cancel/{1}", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptionsWithParam, "/api/orders/{1}", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptionsWithParam, "/api/orderbook/{1}", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptionsWithParam, "/api/order/{1}", Options);
+    ADD_METHOD_TO(OrderBookController::handleOptionsWithParam, "/api/trades/{1}", Options);
     METHOD_LIST_END
 
     // Core trading endpoints
@@ -49,6 +65,11 @@ public:
     void registerUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void loginUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void asyncDemo(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
+    void clearAllOrders(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
+
+    // CORS preflight handlers
+    void handleOptions(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback);
+    void handleOptionsWithParam(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string param);
 
     // Setup methods - called during initialization
     static void setEngine(MatchingEngine* eng);
