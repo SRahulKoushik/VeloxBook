@@ -15,11 +15,6 @@ void OrderBookWebSocket::handleNewConnection(const drogon::HttpRequestPtr &req,
                                              const drogon::WebSocketConnectionPtr &wsConn) {
     std::lock_guard<std::mutex> lock(clients_mutex_);
     clients_.insert(wsConn);
-    // Optionally send initial order book snapshot
-    // Json::Value welcome;
-    // welcome["type"] = "welcome";
-    // Json::StreamWriterBuilder wbuilder;
-    // wsConn->send(Json::writeString(wbuilder, welcome));
 }
 
 void OrderBookWebSocket::handleConnectionClosed(const drogon::WebSocketConnectionPtr &wsConn) {
